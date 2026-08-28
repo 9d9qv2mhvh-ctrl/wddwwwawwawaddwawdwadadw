@@ -2410,36 +2410,43 @@ function Library:CreateUICustomization(tab, side)
 
     group:ColorPicker("Text Active", Library.Theme.TextActive, function(col)
         Library.Theme.TextActive = col
+        Library.Theme.AccentDark = Color3.fromRGB(0, 0, 255)
         Library:RefreshTheme()
     end, "_ui_text_active")
 
     group:ColorPicker("Text Inactive", Library.Theme.TextInactive, function(col)
         Library.Theme.TextInactive = col
+        Library.Theme.AccentDark = Color3.fromRGB(0, 0, 255)
         Library:RefreshTheme()
     end, "_ui_text_inactive")
 
     group:ColorPicker("Panel Background", Library.Theme.PanelFill, function(col)
         Library.Theme.PanelFill = col
+        Library.Theme.AccentDark = Color3.fromRGB(0, 0, 255)
         Library:RefreshTheme()
     end, "_ui_panel_fill")
 
     group:ColorPicker("Content Background", Library.Theme.ContentFill, function(col)
         Library.Theme.ContentFill = col
+        Library.Theme.AccentDark = Color3.fromRGB(0, 0, 255)
         Library:RefreshTheme()
     end, "_ui_content_fill")
 
     group:ColorPicker("Group Background", Library.Theme.ChildFill, function(col)
         Library.Theme.ChildFill = col
+        Library.Theme.AccentDark = Color3.fromRGB(0, 0, 255)
         Library:RefreshTheme()
     end, "_ui_child_fill")
 
     group:ColorPicker("Header Top", Library.Theme.HeaderTop, function(col)
         Library.Theme.HeaderTop = col
+        Library.Theme.AccentDark = Color3.fromRGB(0, 0, 255)
         Library:RefreshTheme()
     end, "_ui_header_top")
 
     group:ColorPicker("Header Bottom", Library.Theme.HeaderBottom, function(col)
         Library.Theme.HeaderBottom = col
+        Library.Theme.AccentDark = Color3.fromRGB(0, 0, 255)
         Library:RefreshTheme()
     end, "_ui_header_bottom")
 
