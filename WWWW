@@ -1,0 +1,1742 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/selciawashere/screepts/refs/heads/main/a"))()
+
+getgenv()[""] = false
+task.spawn(function()
+    while task.wait() do
+        if getgenv()[""] then
+            local a = game:GetService("Players").LocalPlayer
+            if a and a.Character and a.Character:FindFirstChild("Humanoid") then
+                local b = a.Character.Humanoid
+                b:ChangeState(Enum.HumanoidStateType.FallingDown)
+            end
+        end
+    end
+end)
+
+local function GetGunSettings()
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    local tool = char and char:FindFirstChildOfClass("Tool")
+
+    if not tool or not tool:FindFirstChild("Setting") then
+        if Library and Library.Notify then
+            Library:Notify({
+                Title = "",
+                Content = "Equip a gun first",
+                Duration = 2,
+            })
+        end
+        return nil
+    end
+
+    return require(tool.Setting), tool
+end
+
+local MIN_FIRE_RATE = 0.07 
+local autoEnabled = false
+local noRateEnabled = false
+
+local function applyGunSettings()
+    local player = game.Players.LocalPlayer
+    if not player or not player.Character then return end
+    
+    local tool = player.Character:FindFirstChildOfClass("Tool")
+    if not tool or not tool:FindFirstChild("Setting") then return end
+
+    local settings = require(tool.Setting)
+
+    if autoEnabled and noRateEnabled then
+        settings.Auto = true
+        settings.FireRate = MIN_FIRE_RATE
+    elseif autoEnabled then
+        settings.Auto = true
+    elseif noRateEnabled then
+        settings.FireRate = 0
+    end
+end
+
+-- Check if Library exists
+if not Library then
+    warn(": UI Library not loaded. Make sure the loader runs first.")
+    return
+end
+
+local MarketplaceService = game:GetService("MarketplaceService")
+local Players = game:GetService("Players")
+
+local gameName = "Game"
+do
+    local ok, info = pcall(MarketplaceService.GetProductInfo, MarketplaceService, game.PlaceId)
+    if ok and type(info) == "table" and type(info.Name) == "string" then
+        gameName = info.Name
+    end
+end
+local playerName = Players.LocalPlayer.Name
+
+local window = Library:Window({
+    Prefix = "420",
+    Suffix = gameName .. " • " .. playerName
+})
+
+local mainTab = window:Tab({ name = "Main" })
+local playerTab = window:Tab({ name = "Player" })
+local exploitsTab = window:Tab({ name = "Exploits" })
+local combatTab = window:Tab({ name = "Combat" })
+local visualsTab = window:Tab({ name = "Visuals" })
+local settingsTab = window:Tab({ name = "UI Settings" })
+
+local player = game.Players.LocalPlayer
+local humanoidRootPart
+player.CharacterAdded:Connect(function(char)
+    humanoidRootPart = char:WaitForChild("HumanoidRootPart", 10)
+end)
+if player.Character then
+    humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+end
+
+local function updateCharacterReferences()
+    local character = player.Character or player.CharacterAdded:Wait()
+    humanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
+end
+
+pcall(updateCharacterReferences)
+
+local locations = {
+    ["Bank"] = Vector3.new(-447.758148,5.417735,-967.209900);
+    ["Car Dealer"] = Vector3.new(-229.793732, 5.83876085, -427.954071);
+    ["RoMazon"] = Vector3.new(241.146454, 5.68783474, -352.752625);
+    ["UpTools"] = Vector3.new(94.351753,5.858244,-1928.503418);
+    ["Gun Store"] = Vector3.new(-1248.1051, 5.6356554, -1053.63635);
+    ["Food Store"] = Vector3.new(-1485.372925,4.804163,-896.463135);
+    ["Barber"] = Vector3.new(-1460.38342, 4.4554925, -64.5802841);
+    ["Pawn Shop"] = Vector3.new(-1159.01917, 5.89419746, 624.097534);
+    ["Jewllery Store"] = Vector3.new(-295.256592, 5.18235636, 626.891907);
+    ["Shoe Store"] = Vector3.new(175.204712, 5.50293112, 139.765564);
+    ["Clothes Store"] = Vector3.new(-1460.38342, 4.4554925, -1765.37219);
+    ["Female Clothes Store"] = Vector3.new(-315.35788, 5.11220741, -702.156311);
+    ["Candy"] = Vector3.new(433.196869, 4.67473316, 235.629074);
+    ["Black Market"] = Vector3.new(-1000.48071, 4.67473316, 167.447525);
+    ["Block Party"] = Vector3.new(885.441345, 16.619997, 104.065529);
+}
+
+local function teleportToLocation(locVec, locName)
+    if not humanoidRootPart or not humanoidRootPart.Parent then
+        if Library and Library.Notify then
+            Library:Notify({
+                Title = "Jaydan's Exploit",
+                Content = "Character not found!",
+                Duration = 2,
+            })
+        end
+        return
+    end
+    
+    pcall(function()
+        humanoidRootPart.Parent:FindFirstChild("Humanoid"):ChangeState(0)
+        task.wait(0.1)
+        repeat task.wait(0.0001) until not player:GetAttribute("LastACPos")
+        humanoidRootPart.CFrame = CFrame.new(locVec)
+        task.wait(0.1)
+        humanoidRootPart.Parent:FindFirstChild("Humanoid"):ChangeState(2)
+    end)
+
+    if Library and Library.Notify then
+        Library:Notify({
+            Title = "",
+            Content = "Teleported to " .. tostring(locName),
+            Duration = 2,
+        })
+    end
+end
+
+local localTeleportSection = mainTab:Section({
+    name = "Teleport",
+    side = "left"
+})
+
+local teleportNames = {}
+for name in pairs(locations) do
+    table.insert(teleportNames, name)
+end
+table.sort(teleportNames)
+table.insert(teleportNames, 1, "Candy Farm")
+
+local selectedTeleport = "Candy Farm"
+
+local teleportTargets = {
+    ["Candy Farm"] = CFrame.new(437.803284, 8.016006, 284.784271),
+}
+
+for name, pos in pairs(locations) do
+    teleportTargets[name] = CFrame.new(pos)
+end
+
+localTeleportSection:Dropdown({
+    name = "TP Location",
+    flag = "SelectedTeleportLocation",
+    options = teleportNames,
+    default = selectedTeleport,
+    callback = function(value)
+        selectedTeleport = tostring(value)
+    end
+})
+
+localTeleportSection:Button({
+    name = "Teleport",
+    Desc = "Go to the selected location",
+    Callback = function()
+        local target = teleportTargets[selectedTeleport]
+        if target then
+            teleportToLocation(target.Position, selectedTeleport)
+        end
+    end
+})
+
+localTeleportSection:Button({
+    name = "Save Current Position",
+    Desc = "Save your current position as a temporary TP",
+    Callback = function()
+        local root = getRoot()
+        if root then
+            teleportTargets["Saved Position"] = root.CFrame
+            if not table.find(teleportNames, "Saved Position") then
+                table.insert(teleportNames, "Saved Position")
+            end
+            if Library and Library.Notify then
+                Library:Notify({
+                    Title = "Teleport",
+                    Content = "Current position saved",
+                    Duration = 2,
+                })
+            end
+        end
+    end,
+})
+
+localTeleportSection:Button({
+    name = "Go To Saved Position",
+    Desc = "Teleport to your saved position",
+    Callback = function()
+        local target = teleportTargets["Saved Position"]
+        if target then
+            teleportToLocation(target.Position, "Saved Position")
+        elseif Library and Library.Notify then
+            Library:Notify({
+                Title = "Teleport",
+                Content = "No saved position yet",
+                Duration = 2,
+            })
+        end
+    end,
+})
+
+local movementSection = playerTab:Section({
+    name = "Movement",
+    side = "left"
+})
+
+local WalkSpeedEnabled = false
+local WalkSpeedValue = 16
+local JumpPowerEnabled = false
+local JumpPowerValue = 50
+
+local walkSpeedOptions = {"16", "24", "32", "50", "75", "100"}
+local jumpPowerOptions = {"50", "75", "100", "125", "150", "200"}
+
+local function applyMovementSettings()
+    local character = player.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+
+    humanoid.WalkSpeed = WalkSpeedEnabled and WalkSpeedValue or 16
+
+    if JumpPowerEnabled then
+        humanoid.UseJumpPower = true
+        humanoid.JumpPower = JumpPowerValue
+    else
+        humanoid.UseJumpPower = true
+        humanoid.JumpPower = 50
+    end
+end
+
+movementSection:Toggle({
+    name = "WalkSpeed",
+    Desc = "Enable custom walk speed",
+    Default = false,
+    Callback = function(value)
+        WalkSpeedEnabled = value
+        applyMovementSettings()
+    end
+})
+
+movementSection:Dropdown({
+    name = "WalkSpeed Value",
+    flag = "WalkSpeedValue",
+    options = walkSpeedOptions,
+    default = "16",
+    callback = function(value)
+        WalkSpeedValue = tonumber(value) or 16
+        if WalkSpeedEnabled then
+            applyMovementSettings()
+        end
+    end
+})
+
+movementSection:Toggle({
+    name = "JumpPower",
+    Desc = "Enable custom jump power",
+    Default = false,
+    Callback = function(value)
+        JumpPowerEnabled = value
+        applyMovementSettings()
+    end
+})
+
+movementSection:Dropdown({
+    name = "JumpPower Value",
+    flag = "JumpPowerValue",
+    options = jumpPowerOptions,
+    default = "50",
+    callback = function(value)
+        JumpPowerValue = tonumber(value) or 50
+        if JumpPowerEnabled then
+            applyMovementSettings()
+        end
+    end
+})
+
+movementSection:Button({
+    name = "Reset Movement",
+    Desc = "Restore default speed and jump",
+    Callback = function()
+        WalkSpeedEnabled = false
+        JumpPowerEnabled = false
+        WalkSpeedValue = 16
+        JumpPowerValue = 50
+        applyMovementSettings()
+    end
+})
+
+local utilitySection = playerTab:Section({
+    name = "Player Utilities",
+    side = "right"
+})
+
+utilitySection:Button({
+    name = "Respawn",
+    Desc = "Reload your character",
+    Callback = function()
+        local character = player.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.Health = 0
+        end
+    end
+})
+
+utilitySection:Button({
+    name = "Reset Character",
+    Desc = "Reset movement state",
+    Callback = function()
+        resetCharacter()
+        applyMovementSettings()
+    end
+})
+
+local visualsSection = visualsTab:Section({
+    name = "Camera",
+    side = "left"
+})
+
+local FOVEnabled = false
+local FOVValue = 70
+
+local function applyFOV()
+    local camera = workspace.CurrentCamera
+    if camera then
+        camera.FieldOfView = FOVEnabled and FOVValue or 70
+    end
+end
+
+visualsSection:Toggle({
+    name = "Custom FOV",
+    Desc = "Use a custom camera field of view",
+    Default = false,
+    Callback = function(value)
+        FOVEnabled = value
+        applyFOV()
+    end
+})
+
+visualsSection:Dropdown({
+    name = "FOV Value",
+    flag = "FOVValue",
+    options = {"70", "80", "90", "100", "110", "120"},
+    default = "70",
+    callback = function(value)
+        FOVValue = tonumber(value) or 70
+        if FOVEnabled then
+            applyFOV()
+        end
+    end
+})
+
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local LP = Players.LocalPlayer
+local PlayerGui = LP:WaitForChild("PlayerGui")
+
+local running = false
+local cycleRunning = false
+local activeBuyer = nil
+local noclipConnection = nil
+local waitForCookers
+
+-- Session accumulator
+local sessionCounts = {
+    ["Pink Lemonade Numz"] = 0,
+    ["Grape Numz"] = 0,
+    ["Strawberry Numz"] = 0,
+    ["Blue Raspberry Numz"] = 0,
+}
+local sessionEarnings = 0
+local previousInventory = {}
+
+local NUMZ_PRODUCTS = {
+    "Pink Lemonade Numz",
+    "Grape Numz",
+    "Strawberry Numz",
+    "Blue Raspberry Numz",
+}
+
+local FLAVOR_PAYOUT = {
+    ["Pink Lemonade Numz"] = 4500,
+    ["Grape Numz"] = 1500,
+    ["Strawberry Numz"] = 2000,
+}
+
+local FLAVOR_SHORT = {
+    ["Pink Lemonade Numz"] = "Pink",
+    ["Grape Numz"] = "Grape",
+    ["Strawberry Numz"] = "Straw",
+    ["Blue Raspberry Numz"] = "Blue",
+}
+
+local PABLO_ITEMS = { "Water Gallon", "Flavor Packet" }
+local PABLO_SHOP_CF = CFrame.new(-1010.918, 4.6, -672.411) * CFrame.Angles(0, 1.595, 0.001)
+local COOKING_AREA_CF = CFrame.new(498, 4.8, 268)
+local BUY_COOLDOWN = 3.5
+local MOVE_SPEED = 500
+local STOP_DISTANCE = 4
+
+local COOK_ACTIONS = {
+    CLAIM = "Claim Cooker",
+    WATER = "Pour Water",
+    FLAVOR = "Pour Flavor Packet",
+    BOIL = "Boil",
+    CUT = "Cut and Process Numz",
+}
+
+local function normalizePromptText(value)
+    value = tostring(value or ""):lower()
+    value = value:gsub("[%p_]+", " ")
+    value = value:gsub("%s+", " ")
+    return value:match("^%s*(.-)%s*$") or ""
+end
+
+local function promptMatches(prompt, wanted)
+    if not prompt or not prompt:IsA("ProximityPrompt") then
+        return false
+    end
+
+    local actual = normalizePromptText(prompt.ActionText)
+    local target = normalizePromptText(wanted)
+
+    if actual == target then
+        return true
+    end
+
+    -- Some versions of the game slightly change capitalization/punctuation/text.
+    return actual:find(target, 1, true) ~= nil or target:find(actual, 1, true) ~= nil
+end
+
+local function automationActive()
+    return running or cycleRunning
+end
+
+local function enableNoclip()
+    if noclipConnection then return end
+    noclipConnection = RunService.Stepped:Connect(function()
+        local char = LP.Character
+        if not char then return end
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end)
+end
+
+local function disableNoclip()
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+    local char = LP.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            part.CanCollide = true
+        end
+    end
+end
+
+local function resetCharacter()
+    local char = LP.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not humanoid then return end
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.AssemblyAngularVelocity = Vector3.zero
+    humanoid.PlatformStand = false
+    humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+    task.wait()
+    humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    humanoid:Move(Vector3.new(0, 0, 0), true)
+end
+
+local function getNetRemote(name, isFunc)
+    local remote
+    pcall(function()
+        local Net = require(ReplicatedStorage.Modules.Packages.Net)
+        remote = isFunc and Net:RemoteFunction(name) or Net:RemoteEvent(name)
+    end)
+    return typeof(remote) == "Instance" and remote or nil
+end
+
+local Convenience = getNetRemote("Convenience", false)
+local NumzFunction = getNetRemote("NumzFunction", true)
+local NumzEvent = getNetRemote("Numz", false)
+
+if NumzEvent then
+    NumzEvent.OnClientEvent:Connect(function(action)
+        if action == "End" then
+            activeBuyer = nil
+        end
+    end)
+end
+
+local function getRoot()
+    local char = LP.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function hasTool(name)
+    local function scan(container)
+        if not container then return false end
+        for _, tool in ipairs(container:GetChildren()) do
+            if tool:IsA("Tool") and tool.Name == name then
+                return true
+            end
+        end
+        return false
+    end
+    return scan(LP.Backpack) or scan(LP.Character)
+end
+
+local function waitForTool(name, timeout)
+    timeout = timeout or 15
+    local started = os.clock()
+    while os.clock() - started < timeout do
+        if not automationActive() then return false end
+        if hasTool(name) then return true end
+        task.wait(0.15)
+    end
+    return false
+end
+
+local function equipTool(name)
+    local char = LP.Character
+    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return false end
+    if char:FindFirstChild(name) then return true end
+    local tool = LP.Backpack:FindFirstChild(name)
+    if not tool then return false end
+    pcall(function()
+        humanoid:EquipTool(tool)
+    end)
+    task.wait(0.4)
+    return char:FindFirstChild(name) ~= nil
+end
+
+local function hasAllPrep()
+    return hasTool("Water Gallon") and hasTool("Flavor Packet")
+end
+
+local function hasPrepForStage(stage)
+    stage = tonumber(stage) or 0
+    if stage <= 1 then return hasTool("Water Gallon") end
+    if stage == 2 then return hasTool("Flavor Packet") end
+    return true
+end
+
+local function countNumz()
+    local count = 0
+    local best
+    local bestPay = 0
+    for _, name in ipairs(NUMZ_PRODUCTS) do
+        if hasTool(name) then
+            count = count + 1
+            local payout = FLAVOR_PAYOUT[name] or 0
+            if payout >= bestPay then
+                best = name
+                bestPay = payout
+            end
+        end
+    end
+    return count, best, bestPay
+end
+
+-- Snapshot current inventory state
+local function snapshotInventory()
+    local snap = {}
+    for _, name in ipairs(NUMZ_PRODUCTS) do
+        snap[name] = hasTool(name) and 1 or 0
+    end
+    return snap
+end
+
+-- Diff snapshot against previous; accumulate new arrivals
+local function tickInventory()
+    local current = snapshotInventory()
+    for _, name in ipairs(NUMZ_PRODUCTS) do
+        local prev = previousInventory[name] or 0
+        local curr = current[name] or 0
+        if curr > prev then
+            local gained = curr - prev
+            sessionCounts[name] = sessionCounts[name] + gained
+            sessionEarnings = sessionEarnings + gained * (FLAVOR_PAYOUT[name] or 0)
+        end
+    end
+    previousInventory = current
+end
+
+local function resetSessionCounts()
+    for _, name in ipairs(NUMZ_PRODUCTS) do
+        sessionCounts[name] = 0
+    end
+    sessionEarnings = 0
+    previousInventory = snapshotInventory()
+end
+
+local function velocityTeleport(targetCF, awaitArrival)
+    local root = getRoot()
+    if not root then return false end
+
+    enableNoclip()
+
+    local target = targetCF.Position + Vector3.new(0, 3, 0)
+    local done = false
+    local success = false
+    local connection
+
+    local function cleanup()
+        if connection then
+            connection:Disconnect()
+            connection = nil
+        end
+        disableNoclip()
+    end
+
+    connection = RunService.Heartbeat:Connect(function()
+        if not automationActive() and not awaitArrival then
+            cleanup()
+            resetCharacter()
+            done = true
+            return
+        end
+
+        root = getRoot()
+        if not root or not root.Parent then
+            cleanup()
+            done = true
+            return
+        end
+
+        local direction = target - root.Position
+        local distance = direction.Magnitude
+
+        if distance <= STOP_DISTANCE then
+            root.AssemblyLinearVelocity = Vector3.zero
+            root.AssemblyAngularVelocity = Vector3.zero
+            root.CFrame = CFrame.new(target)
+            cleanup()
+            resetCharacter()
+            success = true
+            done = true
+            return
+        end
+
+        root.AssemblyLinearVelocity = direction.Unit * MOVE_SPEED
+    end)
+
+    if awaitArrival then
+        local deadline = os.clock() + 15
+        while not done and os.clock() < deadline do
+            task.wait(0.05)
+        end
+
+        if not done then
+            cleanup()
+            local currentRoot = getRoot()
+            if currentRoot then
+                currentRoot.AssemblyLinearVelocity = Vector3.zero
+                currentRoot.AssemblyAngularVelocity = Vector3.zero
+            end
+        end
+
+        return success
+    end
+
+    return true
+end
+
+local function goToTarget(target, offset)
+    offset = offset or Vector3.new(0, 0, -4)
+    local position
+    if typeof(target) == "Vector3" then
+        position = target
+    elseif typeof(target) == "Instance" then
+        position = target:GetPivot().Position
+    else
+        return false
+    end
+    return velocityTeleport(CFrame.new(position + offset, position), true)
+end
+
+local function goToPablos()
+    return velocityTeleport(PABLO_SHOP_CF, true)
+end
+
+local function goToCookingArea()
+    return velocityTeleport(COOKING_AREA_CF, true) and waitForCookers(15)
+end
+
+local function firePrompt(prompt)
+    if not prompt or not prompt.Parent or not prompt.Enabled then
+        return false
+    end
+
+    local fired = false
+
+    -- Prefer the executor prompt primitive when available.
+    if type(fireproximityprompt) == "function" then
+        local ok = pcall(function()
+            fireproximityprompt(prompt)
+        end)
+        if ok then
+            fired = true
+        end
+    end
+
+    -- Fallback for executors that do not expose fireproximityprompt.
+    if not fired then
+        local ok = pcall(function()
+            prompt:InputHoldBegin()
+            if prompt.HoldDuration > 0 then
+                task.wait(prompt.HoldDuration + 0.08)
+            else
+                task.wait(0.08)
+            end
+            prompt:InputHoldEnd()
+        end)
+        fired = ok
+    end
+
+    -- Give the game a moment to process the prompt.
+    if fired then
+        task.wait(0.12)
+    end
+
+    return fired
+end
+
+local function getPromptPosition(prompt)
+    if not prompt or not prompt.Parent then
+        return nil
+    end
+
+    local parent = prompt.Parent
+    if parent:IsA("Attachment") then
+        return parent.WorldPosition
+    end
+
+    if parent:IsA("BasePart") then
+        return parent.Position
+    end
+
+    local model = prompt:FindFirstAncestorOfClass("Model")
+    if model then
+        return model:GetPivot().Position
+    end
+
+    return nil
+end
+
+local function findEnabledPrompt(container, actionText)
+    if not container then return nil end
+
+    local exact
+    local partial
+
+    for _, descendant in ipairs(container:GetDescendants()) do
+        if descendant:IsA("ProximityPrompt") and descendant.Enabled then
+            if promptMatches(descendant, actionText) then
+                return descendant
+            end
+
+            local actual = normalizePromptText(descendant.ActionText)
+            local wanted = normalizePromptText(actionText)
+            if actual:find(wanted, 1, true) or wanted:find(actual, 1, true) then
+                partial = partial or descendant
+            end
+
+            exact = exact or descendant
+        end
+    end
+
+    return partial
+end
+
+local function buyPablo(itemName)
+    if not Convenience then return false end
+    return pcall(function()
+        Convenience:FireServer("PurchasePablo", {
+            category = "Items",
+            name = itemName,
+        })
+    end)
+end
+
+local function buyPrepItems()
+    if not goToPablos() then return false end
+    task.wait(0.5)
+
+    local wanted = {}
+    for i, item in ipairs(PABLO_ITEMS) do
+        if not hasTool(item) then
+            table.insert(wanted, item)
+            if not buyPablo(item) then return false end
+            if not waitForTool(item, 12) then return false end
+            if i < #PABLO_ITEMS and not hasAllPrep() then
+                task.wait(BUY_COOLDOWN)
+            end
+        end
+    end
+    return #wanted == 0 or hasAllPrep()
+end
+
+local function getCookingArea()
+    local map = Workspace:FindFirstChild("Map")
+    return map and map:FindFirstChild("CookingArea")
+end
+
+local function getCookerOwner(cooker)
+    local owner = cooker:GetAttribute("Owner")
+    if owner == nil or owner == "" then return nil end
+    return owner
+end
+
+local function getCookerStage(cooker)
+    return tonumber(cooker:GetAttribute("Stage")) or 0
+end
+
+local function getCookerFlavor(cooker)
+    return cooker:GetAttribute("Flavor") or "unknown"
+end
+
+local function getCookerPrompt(cooker, actionText)
+    if not cooker or not cooker.Parent then
+        return nil
+    end
+
+    return findEnabledPrompt(cooker, actionText)
+end
+
+local function iterCookers()
+    local area = getCookingArea()
+    if not area then return {} end
+
+    local list = {}
+    for _, child in ipairs(area:GetChildren()) do
+        if child.Name == "GasCooker" then
+            table.insert(list, child)
+        end
+    end
+    if #list == 0 then
+        for _, descendant in ipairs(area:GetDescendants()) do
+            if descendant.Name == "GasCooker" then
+                table.insert(list, descendant)
+            end
+        end
+    end
+    return list
+end
+
+waitForCookers = function(timeout)
+    timeout = timeout or 15
+    local started = os.clock()
+    while os.clock() - started < timeout do
+        if not automationActive() then return false end
+        if #iterCookers() > 0 then return true end
+        task.wait(0.3)
+    end
+    return false
+end
+
+local function isCookerUnclaimed(cooker)
+    if getCookerOwner(cooker) then return false end
+    if getCookerStage(cooker) == 0 then return true end
+    local claim = getCookerPrompt(cooker, COOK_ACTIONS.CLAIM)
+    return claim ~= nil and claim.Enabled
+end
+
+local function waitForPrompt(cooker, actionText, timeout)
+    timeout = timeout or 8
+    local started = os.clock()
+
+    while os.clock() - started < timeout do
+        if not automationActive() then
+            return nil
+        end
+
+        local prompt = getCookerPrompt(cooker, actionText)
+        if prompt then
+            return prompt
+        end
+
+        task.wait(0.15)
+    end
+
+    return nil
+end
+
+local function findUnclaimedCooker()
+    local root = getRoot()
+    local best
+    local bestScore = -math.huge
+
+    for _, cooker in ipairs(iterCookers()) do
+        if isCookerUnclaimed(cooker) then
+            local distance = root
+                and (root.Position - cooker:GetPivot().Position).Magnitude
+                or 9999
+            local flavor = getCookerFlavor(cooker)
+            local score = (FLAVOR_PAYOUT[flavor] or 0) * 1000 - distance
+            if score > bestScore then
+                best = cooker
+                bestScore = score
+            end
+        end
+    end
+    return best, best and getCookerFlavor(best) or nil
+end
+
+local function cookerNeedsWork(cooker)
+    if not cooker or not cooker.Parent then return false end
+    local stage = getCookerStage(cooker)
+    if stage < 4 then return true end
+    local cut = getCookerPrompt(cooker, COOK_ACTIONS.CUT)
+    return cut ~= nil and cut.Enabled and countNumz() == 0
+end
+
+local function findMyCooker()
+    local best
+    local bestStage
+    for _, cooker in ipairs(iterCookers()) do
+        if getCookerOwner(cooker) == LP.Name and cookerNeedsWork(cooker) then
+            local stage = getCookerStage(cooker)
+            if not bestStage or stage > bestStage then
+                best = cooker
+                bestStage = stage
+            end
+        end
+    end
+    return best
+end
+
+local function needsPrepBuy(mine)
+    if hasAllPrep() then return false end
+    if mine and not cookerNeedsWork(mine) then mine = nil end
+    if not mine then
+        return not hasTool("Water Gallon") or not hasTool("Flavor Packet")
+    end
+
+    local stage = getCookerStage(mine)
+    if stage >= 3 then return false end
+    if stage <= 1 then
+        return not hasTool("Water Gallon") or not hasTool("Flavor Packet")
+    end
+    return not hasTool("Flavor Packet")
+end
+
+local function waitForStage(cooker, targetStage, timeout)
+    timeout = timeout or 90
+    local started = os.clock()
+    while os.clock() - started < timeout do
+        if not automationActive() then return false end
+        if not cooker.Parent then return false end
+        if getCookerStage(cooker) >= targetStage then return true end
+        task.wait(0.25)
+    end
+    return false
+end
+
+local function hideWaitForStage(cooker, targetStage, timeout)
+    timeout = timeout or 120
+    local base = cooker:GetPivot().Position
+    local hideCF = CFrame.new(base.X, base.Y - 12, base.Z)
+
+    enableNoclip()
+    local root = getRoot()
+    if root then
+        root.CFrame = hideCF
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        root.Anchored = true
+    end
+
+    local reached = false
+    local started = os.clock()
+    while os.clock() - started < timeout do
+        if not automationActive() then break end
+        if not cooker.Parent then break end
+        if getCookerStage(cooker) >= targetStage then
+            reached = true
+            break
+        end
+
+        root = getRoot()
+        if root and (root.Position - hideCF.Position).Magnitude > 2 then
+            root.Anchored = false
+            root.CFrame = hideCF
+            root.AssemblyLinearVelocity = Vector3.zero
+            root.Anchored = true
+        end
+        task.wait(0.25)
+    end
+
+    root = getRoot()
+    if root then
+        root.Anchored = false
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+    disableNoclip()
+    return reached or getCookerStage(cooker) >= targetStage
+end
+
+local function useCookerPrompt(cooker, actionText, waitAfter, promptTimeout)
+    promptTimeout = promptTimeout or 8
+    waitAfter = waitAfter or 0
+
+    for attempt = 1, 4 do
+        if not automationActive() then
+            return false
+        end
+
+        local prompt = waitForPrompt(cooker, actionText, promptTimeout)
+        if not prompt then
+            task.wait(0.25)
+        else
+
+        -- Move close to the actual prompt rather than assuming the cooker pivot
+        -- is the interaction point.
+        local promptPos = getPromptPosition(prompt)
+        local targetPos = promptPos or cooker:GetPivot().Position
+
+        if not goToTarget(targetPos, Vector3.new(0, 0, 3)) then
+            task.wait(0.25)
+            continue
+        end
+
+        task.wait(0.15)
+
+        -- Reacquire it after movement because prompts can be recreated.
+        prompt = getCookerPrompt(cooker, actionText) or findEnabledPrompt(cooker, actionText)
+        if prompt and prompt.Enabled and firePrompt(prompt) then
+            if waitAfter > 0 then
+                task.wait(waitAfter)
+            end
+            return true
+        end
+
+        task.wait(0.35)
+        end
+    end
+
+    return false
+end
+
+local function cookOnce()
+    if not goToCookingArea() then return false end
+
+    local cooker = findMyCooker()
+    local flavor
+    if cooker then
+        flavor = getCookerFlavor(cooker)
+    else
+        if not hasAllPrep() then return false end
+        cooker, flavor = findUnclaimedCooker()
+    end
+    if not cooker then return false end
+
+    if not getCookerOwner(cooker) then
+        if not useCookerPrompt(cooker, COOK_ACTIONS.CLAIM, 0.8) then return false end
+        local started = os.clock()
+        while os.clock() - started < 8 do
+            if getCookerOwner(cooker) == LP.Name then break end
+            task.wait(0.2)
+        end
+        if getCookerOwner(cooker) ~= LP.Name then return false end
+    end
+
+    local stage = getCookerStage(cooker)
+    if stage <= 2 and not hasPrepForStage(stage) then return false end
+
+    if getCookerStage(cooker) <= 1 then
+        equipTool("Water Gallon")
+        if not useCookerPrompt(cooker, COOK_ACTIONS.WATER, 0.1) then return false end
+        if not waitForStage(cooker, 2, 30) then
+            equipTool("Water Gallon")
+            useCookerPrompt(cooker, COOK_ACTIONS.WATER, 0.1)
+            if not waitForStage(cooker, 2, 20) then return false end
+        end
+    end
+
+    if getCookerStage(cooker) <= 2 then
+        equipTool("Flavor Packet")
+        if not useCookerPrompt(cooker, COOK_ACTIONS.FLAVOR, 0.1) then return false end
+        if not waitForStage(cooker, 3, 20) then
+            equipTool("Flavor Packet")
+            useCookerPrompt(cooker, COOK_ACTIONS.FLAVOR, 0.1)
+            if not waitForStage(cooker, 3, 15) then return false end
+        end
+    end
+
+    if getCookerStage(cooker) <= 3 then
+        local humanoid = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            pcall(function()
+                humanoid:UnequipTools()
+            end)
+        end
+        task.wait(0.15)
+        if not useCookerPrompt(cooker, COOK_ACTIONS.BOIL, 0.1, 30) then return false end
+        if not hideWaitForStage(cooker, 4, 120) then
+            useCookerPrompt(cooker, COOK_ACTIONS.BOIL, 0.1, 15)
+            if not hideWaitForStage(cooker, 4, 60) then return false end
+        end
+    end
+
+    local before = countNumz()
+    local started = os.clock()
+    while os.clock() - started < 30 do
+        if countNumz() > before then break end
+        useCookerPrompt(cooker, COOK_ACTIONS.CUT, 0.4)
+        local waitStarted = os.clock()
+        while os.clock() - waitStarted < 4 do
+            if countNumz() > before then break end
+            task.wait(0.3)
+        end
+    end
+
+    started = os.clock()
+    while os.clock() - started < 6 do
+        if countNumz() > before then
+            tickInventory()
+            return true
+        end
+        task.wait(0.3)
+    end
+    return false
+end
+
+local function trackBuyer()
+    if not NumzFunction then return nil end
+    local ok, data = pcall(function()
+        return NumzFunction:InvokeServer("TrackBuyer")
+    end)
+    if not ok or not data then return nil end
+    if typeof(data) == "table" and data.Buyer and data.Buyer.Parent then
+        activeBuyer = data.Buyer
+        return data
+    end
+    return nil
+end
+
+local function getBuyerPrompt(buyer)
+    if not buyer or not buyer.Parent then
+        return nil
+    end
+
+    local best
+
+    for _, descendant in ipairs(buyer:GetDescendants()) do
+        if descendant:IsA("ProximityPrompt") and descendant.Enabled then
+            best = descendant
+            if normalizePromptText(descendant.ActionText):find("sell", 1, true) then
+                return descendant
+            end
+        end
+    end
+
+    return best
+end
+
+local function sellToBuyer(buyer, product)
+    if not buyer or not buyer.Parent then
+        return false
+    end
+
+    if product then
+        equipTool(product)
+    end
+
+    local prompt = getBuyerPrompt(buyer)
+    local targetPos = prompt and getPromptPosition(prompt) or nil
+
+    if targetPos then
+        if not goToTarget(targetPos, Vector3.new(0, 0, 3)) then
+            return false
+        end
+    elseif not goToTarget(buyer, Vector3.new(0, 0, -5)) then
+        return false
+    end
+
+    task.wait(0.15)
+
+    if product then
+        equipTool(product)
+    end
+
+    prompt = getBuyerPrompt(buyer)
+    if not prompt then
+        task.wait(0.3)
+        prompt = getBuyerPrompt(buyer)
+    end
+
+    return prompt ~= nil and firePrompt(prompt) or false
+end
+
+local function sellNumz()
+    local before, product = countNumz()
+    if before == 0 then return false end
+    equipTool(product)
+
+    local data = trackBuyer()
+    if not data then return false end
+    local buyer = data.Buyer
+    local deadline = (data.TimeStarted or tick()) + 175
+
+    while automationActive() and buyer and buyer.Parent and tick() < deadline do
+        if countNumz() < before then
+            activeBuyer = nil
+            tickInventory()
+            return true
+        end
+
+        local root = getRoot()
+        local hrp = buyer:FindFirstChild("HumanoidRootPart")
+        if root and hrp then
+            if (root.Position - hrp.Position).Magnitude > 8 then
+                goToTarget(buyer, Vector3.new(0, 0, -5))
+            else
+                sellToBuyer(buyer, product)
+                task.wait(0.6)
+            end
+        end
+        task.wait(0.25)
+    end
+    return countNumz() < before
+end
+
+local function runOnce()
+    local numzCount, product = countNumz()
+    if numzCount == 0 then
+        local mine
+        if hasAllPrep() or hasTool("Water Gallon") or hasTool("Flavor Packet") then
+            if not goToCookingArea() then return false end
+            mine = findMyCooker()
+        end
+        if needsPrepBuy(mine) and not buyPrepItems() then return false end
+        if not cookOnce() then return false end
+        numzCount, product = countNumz()
+        if numzCount == 0 then return false end
+    end
+    return sellNumz()
+end
+
+local function autoLoop()
+    if running or cycleRunning then return false end
+    running = true
+    task.spawn(function()
+        while running do
+            if runOnce() then
+                task.wait(1)
+            else
+                task.wait(3)
+            end
+        end
+    end)
+    return true
+end
+
+local function stop()
+    running = false
+    cycleRunning = false
+    activeBuyer = nil
+    disableNoclip()
+
+    local root = getRoot()
+    if root then
+        root.Anchored = false
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+end
+
+--==================================================
+-- AUTO CANDY GUI TOGGLE
+-- Uses the full automation above:
+-- buy prep -> cook -> process -> track buyer -> sell
+--==================================================
+
+previousInventory = snapshotInventory()
+
+local AutoCandy = false
+
+local function setAutoCandy(state)
+    AutoCandy = state
+
+    if state then
+        previousInventory = snapshotInventory()
+        autoLoop()
+    else
+        stop()
+    end
+end
+
+-- Put this inside your existing localTeleportSection:
+localTeleportSection:Toggle({
+    name = "Auto Candy",
+    Desc = "Runs the full candy automation",
+    Icon = "zap",
+    Type = "Checkbox",
+    Default = false,
+
+    Callback = function(Value)
+        setAutoCandy(Value)
+    end
+})
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local Player = player
+
+local FlyEnabled = false
+
+local FlySpeed = 60
+local FlyConnection
+local FlyVelocity
+local FlyAttachment
+
+local function StopFly()
+    FlyEnabled = false
+
+    if FlyConnection then
+        FlyConnection:Disconnect()
+        FlyConnection = nil
+    end
+
+    if FlyVelocity then
+        FlyVelocity:Destroy()
+        FlyVelocity = nil
+    end
+
+    if FlyAttachment then
+        FlyAttachment:Destroy()
+        FlyAttachment = nil
+    end
+
+    local character = player.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+
+    if root then
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+
+    if humanoid then
+        humanoid.PlatformStand = false
+        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+    end
+end
+
+local function StartFly()
+    StopFly()
+
+    local Character = Player.Character
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+
+    if not Root or not Humanoid then
+        return false
+    end
+
+    FlyEnabled = true
+
+    FlyAttachment = Instance.new("Attachment")
+    FlyAttachment.Name = "LocalFlyAttachment"
+    FlyAttachment.Parent = Root
+
+    FlyVelocity = Instance.new("LinearVelocity")
+    FlyVelocity.Name = "LocalFlyVelocity"
+    FlyVelocity.Attachment0 = FlyAttachment
+    FlyVelocity.MaxForce = math.huge
+    FlyVelocity.VectorVelocity = Vector3.zero
+    FlyVelocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    FlyVelocity.Parent = Root
+
+    FlyConnection = RunService.RenderStepped:Connect(function()
+        if not FlyEnabled or not Root.Parent then
+            StopFly()
+            return
+        end
+
+        local Camera = workspace.CurrentCamera
+        if not Camera then return end
+
+        local MoveDirection = Vector3.zero
+        local look = Camera.CFrame.LookVector
+        local right = Camera.CFrame.RightVector
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            MoveDirection += look
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            MoveDirection -= look
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            MoveDirection -= right
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            MoveDirection += right
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            MoveDirection += Vector3.yAxis
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            MoveDirection -= Vector3.yAxis
+        end
+
+        if MoveDirection.Magnitude > 0 then
+            MoveDirection = MoveDirection.Unit * FlySpeed
+        end
+
+        FlyVelocity.VectorVelocity = MoveDirection
+    end)
+
+    return true
+end
+
+Player.CharacterAdded:Connect(function()
+    local wasEnabled = FlyEnabled
+    StopFly()
+
+    task.wait(0.5)
+
+    if wasEnabled then
+        StartFly()
+    end
+end)
+
+localTeleportSection:Toggle({
+    name = "Fly",
+    Desc = "Fly with WASD + Space/Ctrl",
+    Icon = "wind",
+    Type = "Checkbox",
+    Default = false,
+
+    Callback = function(Value)
+        if Value then
+            StartFly()
+        else
+            StopFly()
+        end
+    end
+})
+
+
+--==================================================
+-- EXTRA UI (COMPACT / SAFE)
+--==================================================
+local TeleportsTab = window:Tab({name="Teleports"})
+local MovementTab = window:Tab({name="Movement"})
+local Combat2Tab = window:Tab({name="Combat+"})
+local Visuals2Tab = window:Tab({name="ESP"})
+
+-- WALK SPEED / MOVEMENT
+local moveSection = MovementTab:Section({name="Movement",side="left"})
+local moveExtra = MovementTab:Section({name="Extra",side="right"})
+local NoClip = false
+local InfiniteJump = false
+local noClipConnection
+
+moveSection:Toggle({name="WalkSpeed",Desc="Keep speed active",Type="Checkbox",Default=false,Callback=function(v)
+    WalkSpeedEnabled = v
+    applyMovementSettings()
+end})
+moveSection:Dropdown({name="Speed",flag="SafeSpeed",options={"16","24","32","50","75","100","150","250"},default="32",callback=function(v)
+    WalkSpeedValue = tonumber(v) or 32
+    if WalkSpeedEnabled then applyMovementSettings() end
+end})
+moveSection:Toggle({name="NoClip",Desc="Disable collisions",Type="Checkbox",Default=false,Callback=function(v)
+    NoClip = v
+    if noClipConnection then noClipConnection:Disconnect(); noClipConnection=nil end
+    if v then
+        noClipConnection = RunService.Stepped:Connect(function()
+            local char=player.Character
+            if char then
+                for _,part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide=false end
+                end
+            end
+        end)
+    end
+end})
+moveSection:Toggle({name="Infinite Jump",Desc="Jump while airborne",Type="Checkbox",Default=false,Callback=function(v)
+    InfiniteJump=v
+end})
+moveExtra:Button({name="Reset Movement",Desc="Restore defaults",Callback=function()
+    WalkSpeedEnabled=false
+    WalkSpeedValue=16
+    local char=player.Character
+    local hum=char and char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed=16; hum.JumpPower=50 end
+end})
+moveExtra:Button({name="Refresh Character",Desc="Reapply movement",Callback=function()
+    applyMovementSettings()
+end})
+
+UserInputService.JumpRequest:Connect(function()
+    if InfiniteJump then
+        local hum=player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+player.CharacterAdded:Connect(function(char)
+    local hum=char:WaitForChild("Humanoid",5)
+    if hum then
+        task.wait(0.2)
+        hum.WalkSpeed = WalkSpeedEnabled and WalkSpeedValue or 16
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.25) do
+        if WalkSpeedEnabled then applyMovementSettings() end
+    end
+end)
+
+-- TELEPORTS
+local tpPlayers = TeleportsTab:Section({name="Players",side="left"})
+local tpMore = TeleportsTab:Section({name="More",side="right"})
+local selectedPlayer = ""
+
+local function getTPPlayers()
+    local list={}
+    for _,plr in ipairs(Players:GetPlayers()) do
+        if plr~=player then list[#list+1]=plr.Name end
+    end
+    if #list==0 then list[1]="No Players" end
+    table.sort(list)
+    return list
+end
+
+local playerList=getTPPlayers()
+tpPlayers:Dropdown({name="Player",flag="TPPlayer",options=playerList,default=playerList[1],callback=function(v)
+    selectedPlayer=tostring(v)
+end})
+tpPlayers:Button({name="TP To Player",Desc="Teleport to selected player",Callback=function()
+    local target=Players:FindFirstChild(selectedPlayer)
+    local root=target and target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+    if root and player.Character then
+        player.Character:PivotTo(root.CFrame*CFrame.new(0,3,0))
+    end
+end})
+tpPlayers:Button({name="Refresh Players",Desc="Reload player list",Callback=function()
+    if Library and Library.Notify then Library:Notify({Title="TP",Content="Rejoin/reload to refresh dropdown",Duration=2}) end
+end})
+
+local moreLocations={"Spawn","Bank","Car Dealer","Gun Store","Food Store","Candy","Black Market","Block Party"}
+local selectedMore="Spawn"
+tpMore:Dropdown({name="Location",flag="MoreTP",options=moreLocations,default="Spawn",callback=function(v) selectedMore=tostring(v) end})
+tpMore:Button({name="Teleport",Desc="Teleport to location",Callback=function()
+    if selectedMore=="Spawn" then
+        local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        local spawn=Workspace:FindFirstChildOfClass("SpawnLocation")
+        if root and spawn then player.Character:PivotTo(spawn.CFrame+Vector3.new(0,4,0)) end
+    elseif teleportToLocation then
+        pcall(teleportToLocation,selectedMore)
+    end
+end})
+
+-- FISTS
+local fistsSection=Combat2Tab:Section({name="Fists",side="left"})
+local FistsEnabled=false
+local FistsFastPunch=false
+local FistsLockOn=false
+local FistsDelay=0.035
+
+local function getFists()
+    local char=player.Character
+    local tool=char and char:FindFirstChild("Fists")
+    if tool and tool:IsA("Tool") then return tool end
+    local backpack=player:FindFirstChildOfClass("Backpack")
+    tool=backpack and backpack:FindFirstChild("Fists")
+    return tool and tool:IsA("Tool") and tool or nil
+end
+local function equipFistsSafe()
+    local hum=player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    local tool=getFists()
+    if hum and tool and tool.Parent~=player.Character then hum:EquipTool(tool) end
+    return tool
+end
+local function closestPlayer()
+    local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    local best,dist=nil,math.huge
+    for _,plr in ipairs(Players:GetPlayers()) do
+        if plr~=player and plr.Character then
+            local hrp=plr.Character:FindFirstChild("HumanoidRootPart")
+            local hum=plr.Character:FindFirstChildOfClass("Humanoid")
+            if hrp and hum and hum.Health>0 then
+                local d=(hrp.Position-root.Position).Magnitude
+                if d<dist then best,dist=plr,d end
+            end
+        end
+    end
+    return best
+end
+
+fistsSection:Toggle({name="Auto Equip Fists",Desc="Only tool named Fists",Type="Checkbox",Default=false,Callback=function(v)
+    FistsEnabled=v
+    if v then equipFistsSafe() end
+end})
+fistsSection:Toggle({name="Lock On",Desc="Face nearest player",Type="Checkbox",Default=false,Callback=function(v) FistsLockOn=v end})
+fistsSection:Toggle({name="Fast Punch",Desc="Rapid Fists activate",Type="Checkbox",Default=false,Callback=function(v)
+    FistsFastPunch=v
+    FistsEnabled=v or FistsEnabled
+    if v then equipFistsSafe() end
+end})
+fistsSection:Dropdown({name="Punch Speed",flag="PunchSpeed",options={"Very Fast","Fast","Normal"},default="Very Fast",callback=function(v)
+    FistsDelay=v=="Very Fast" and 0.025 or (v=="Fast" and 0.05 or 0.1)
+end})
+fistsSection:Button({name="Equip Fists",Desc="Equip only Fists",Callback=function() equipFistsSafe() end})
+
+task.spawn(function()
+    while task.wait(FistsDelay) do
+        if FistsEnabled or FistsFastPunch or FistsLockOn then
+            local tool=equipFistsSafe()
+            local target=FistsLockOn and closestPlayer() or nil
+            local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            local tr=target and target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+            if target and root and tr then
+                root.CFrame=CFrame.lookAt(root.Position,Vector3.new(tr.Position.X,root.Position.Y,tr.Position.Z))
+            end
+            if FistsFastPunch and tool and tool.Parent==player.Character then
+                pcall(function() tool:Activate() end)
+            end
+        end
+    end
+end)
+
+-- ESP
+local espSection=Visuals2Tab:Section({name="ESP",side="left"})
+local ESPEnabled=false
+local ESPNames=true
+local ESPBoxes=true
+local ESPDistance=true
+local ESPObjects={}
+local espDrawing={}
+
+local function clearESP(plr)
+    local o=espDrawing[plr]
+    if o then
+        for _,v in pairs(o) do pcall(function() v:Remove() end) end
+    end
+    espDrawing[plr]=nil
+end
+local function makeESP(plr)
+    if espDrawing[plr] then return end
+    local box=Drawing and Drawing.new("Square")
+    local name=Drawing and Drawing.new("Text")
+    local dist=Drawing and Drawing.new("Text")
+    if not box then return end
+    box.Thickness=1; box.Filled=false; box.Visible=false
+    name.Size=13; name.Center=true; name.Outline=true; name.Visible=false
+    dist.Size=12; dist.Center=true; dist.Outline=true; dist.Visible=false
+    espDrawing[plr]={box=box,name=name,dist=dist}
+end
+for _,plr in ipairs(Players:GetPlayers()) do if plr~=player then makeESP(plr) end end
+Players.PlayerAdded:Connect(function(plr) task.wait(0.5); makeESP(plr) end)
+Players.PlayerRemoving:Connect(clearESP)
+
+espSection:Toggle({name="ESP",Desc="Show player ESP",Type="Checkbox",Default=false,Callback=function(v) ESPEnabled=v end})
+espSection:Toggle({name="Boxes",Desc="Player boxes",Type="Checkbox",Default=true,Callback=function(v) ESPBoxes=v end})
+espSection:Toggle({name="Names",Desc="Player names",Type="Checkbox",Default=true,Callback=function(v) ESPNames=v end})
+espSection:Toggle({name="Distance",Desc="Show distance",Type="Checkbox",Default=true,Callback=function(v) ESPDistance=v end})
+
+RunService.RenderStepped:Connect(function()
+    if not Drawing then return end
+    local cam=Workspace.CurrentCamera
+    if not cam then return end
+    for plr,o in pairs(espDrawing) do
+        local char=plr.Character
+        local root=char and char:FindFirstChild("HumanoidRootPart")
+        local hum=char and char:FindFirstChildOfClass("Humanoid")
+        if not ESPEnabled or not root or not hum or hum.Health<=0 then
+            o.box.Visible=false; o.name.Visible=false; o.dist.Visible=false
+        else
+            local top,on1=cam:WorldToViewportPoint(root.Position+Vector3.new(0,3,0))
+            local bot,on2=cam:WorldToViewportPoint(root.Position-Vector3.new(0,3,0))
+            if on1 and on2 then
+                local h=math.abs(top.Y-bot.Y); local w=h*0.55
+                o.box.Position=Vector2.new(top.X-w/2,top.Y); o.box.Size=Vector2.new(w,h); o.box.Visible=ESPBoxes
+                o.name.Text=plr.DisplayName; o.name.Position=Vector2.new(top.X,top.Y-16); o.name.Visible=ESPNames
+                o.dist.Text=tostring(math.floor((root.Position-(player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position or root.Position)).Magnitude)).."m"; o.dist.Position=Vector2.new(top.X,bot.Y+2); o.dist.Visible=ESPDistance
+            else
+                o.box.Visible=false; o.name.Visible=false; o.dist.Visible=false
+            end
+        end
+    end
+end)
+
+Library:Configs(window)
+
+player.CharacterAdded:Connect(function()
+    task.wait(0.3)
+    applyMovementSettings()
+end)
